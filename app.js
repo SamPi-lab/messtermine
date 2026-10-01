@@ -297,9 +297,10 @@ form.addEventListener('submit', (event) => {
   const error = validateAppointment(input, state.appointments, oldId);
   if (error) return showError(error);
 
-  closeForm();
-  if (!oldId) return addAppointment(input);
-  const checkCalendar = updateAppointment(oldId, input);
+  let checkCalendar = false;
+  if (oldId) checkCalendar = updateAppointment(oldId, input);
+  else addAppointment(input);
+  closeForm(); // erst danach, damit der ID-Vorschlag den gespeicherten Termin kennt
   if (checkCalendar) alert(`Kalender prüfen: alte Einträge von ${oldId} löschen und „Zum Kalender“ neu tippen.`);
 });
 
