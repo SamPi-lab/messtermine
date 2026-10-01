@@ -113,3 +113,15 @@ Bisher läuft die App nur auf dem Mac über `localhost`. Erste echte Messung ist
 5. „Backup speichern“ → Teilen-Menü → Ordner „Backup App“
 6. Flugmodus → App startet trotzdem
 7. Dieselbe .ics zweimal importieren → ersetzt oder doppelt? (offenes Risiko, nur beobachten)
+
+---
+
+## Ergebnis Slice 06
+
+**Stand:** 01.10.2026 · Tests: 60 grün (54 bisher + 5 in `tests/sw.test.js` + 1 in `tests/ics.test.js`) · App: https://sampi-lab.github.io/messtermine/
+
+- **A1–A5:** als automatische Tests umgesetzt und grün. Gegenprobe: `backup.js` aus `APP_FILES` entfernt → Test meldet „backup.js fehlt in APP_FILES“.
+- **B/C:** Die lokale Prüfung entfiel, weil keine Vorschau-Server mehr frei waren (5 aus älteren Chats). Stattdessen direkt unter der echten Adresse geprüft (das ist zugleich der Unterpfad `/messtermine/`, B5): Service Worker aktiv mit Geltungsbereich `/messtermine/`, alle 13 Dateien im Offline-Speicher (B1), Manifest „Messtermine“ geladen (B2), Termin anlegen, Mail-Link, „Zum Kalender“ mit 3 Notizen „Messtermine-App öffnen“ (B6), keine Konsolenfehler, kein horizontales Scrollen bei 375 px.
+- **Nicht geprüft von mir:** B3 (Start ohne Netz) – im eingebauten Browser lässt sich GitHub nicht abschalten; prüfst du im Flugmodus auf dem iPhone. B4 (Update kommt an) über den README-Push geprüft, siehe unten.
+- **Abweichung vom Plan:** Nur ein Speicher (`messtermine`), deshalb kein Aufräumen alter Speicher-Versionen in `activate` nötig. `navigator.storage.persist()` antwortet im Browser „nein“; auf dem iPhone ist die Home-Bildschirm-App ohnehin von der 7-Tage-Löschung ausgenommen. GitHub Pages wurde per `gh api` eingeschaltet, `gh` ist jetzt auf dem Mac installiert und angemeldet.
+- **Prüfst du:** die Liste „Nicht Teil meiner Definition of Done“ oben.
