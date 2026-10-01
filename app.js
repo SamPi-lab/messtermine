@@ -7,7 +7,7 @@
 // Die Einstellungen sind eine eigene Ansicht unter #einstellungen über der Liste.
 // Die Fachregeln (Fälligkeit, Vorlagen füllen, mailto) stehen in logic.js,
 // die Kalender-Datei in ics.js, Standardwerte und Prüfung der Einstellungen in settings.js,
-// Backup-Datei und Hinweis „Backup fällig“ in backup.js.
+// Backup-Datei und Hinweis „Backup fällig“ in backup.js, Offline-Speicher in sw.js.
 
 import {
   suggestNextId, sortAppointments, dueDate, dueMails, formatDateDe,
@@ -484,3 +484,8 @@ renderTemplateFields();
 resetForm();
 render();
 if (location.hash === SETTINGS_HASH) openSettings();
+
+// Offline starten (sw.js) und den Browser bitten, die Daten nicht von selbst zu löschen.
+// Beides fehlt z. B. ohne https/localhost; dann läuft die App wie bisher.
+navigator.serviceWorker?.register('./sw.js').catch(() => {});
+navigator.storage?.persist?.().catch(() => {});
