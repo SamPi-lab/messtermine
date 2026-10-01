@@ -1,6 +1,6 @@
 # Messtermine
 
-Web-App für die Messtermine meiner Masterarbeit: Termine mit Probanden-ID anlegen, fällige Mails sehen, per Tipp in Apple Mail öffnen, Messung und Mail-Erinnerungen in den Kalender übernehmen. Läuft komplett im Browser, keine Namen oder Adressen gespeichert. Die ursprünglichen Phasen-Dokumente (Brainstorm, Align, Plan) liegen in der Git-Historie (`git show 96fb1ac`), der Plan für Slice 02 in `03-plan-slice-02.md`.
+Web-App für die Messtermine meiner Masterarbeit: Termine mit Probanden-ID anlegen, fällige Mails sehen, per Tipp in Apple Mail öffnen, Messung und Mail-Erinnerungen in den Kalender übernehmen. Läuft komplett im Browser, keine Namen oder Adressen gespeichert. Die Phasen-Dokumente liegen in der Git-Historie: Brainstorm, Align und Plan für Slice 01 unter `git show 96fb1ac`, Plan und Ergebnis für Slice 02 unter `git show 99ab894:03-plan-slice-02.md`.
 
 ## Starten
 
@@ -27,6 +27,10 @@ node --test
 | `tests/*.test.js` | Tests für `logic.js` und `ics.js` |
 
 Ablauf: Formular → `addAppointment()` → `localStorage` → `render()` → `dueMails()` + `fillTemplate()` + `mailtoHref()` → Liste mit „Öffnen“ → Häkchen → `setSent()` → `render()`. „Zum Kalender“ → `buildIcs()` → Download `P-07.ics`.
+
+## Auf dem iPhone einstellen
+
+Damit die Kalender-Erinnerung um 6:30 stehen bleibt, bis du sie wegwischst: Einstellungen → Mitteilungen → Kalender → Banner-Stil „Dauerhaft“.
 
 ## Nächste Schritte
 
