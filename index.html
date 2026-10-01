@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Messtermine</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Messtermine</h1>
+  </header>
+
+  <main>
+    <details id="new-appointment" class="card">
+      <summary>+ Neuer Termin</summary>
+      <form id="appointment-form" novalidate>
+        <label>Probanden-ID
+          <input name="id" required autocomplete="off" autocapitalize="characters">
+        </label>
+        <div class="row">
+          <label>Datum
+            <input name="date" type="date" required>
+          </label>
+          <label>Uhrzeit
+            <input name="time" type="time" required step="300">
+          </label>
+        </div>
+        <label>Dauer (Min)
+          <input name="durationMin" type="number" inputmode="numeric" min="5" max="240" step="5" value="60" required>
+        </label>
+        <p id="form-error" class="error" role="alert" hidden></p>
+        <button type="submit" class="primary">Speichern</button>
+      </form>
+    </details>
+
+    <p id="empty" class="muted" hidden>Noch keine Termine.</p>
+    <ul id="appointment-list" class="list"></ul>
+  </main>
+</body>
+</html>

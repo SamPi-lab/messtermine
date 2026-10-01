@@ -1,0 +1,150 @@
+:root {
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --text: #1c1c1e;
+  --muted: #6e6e73;
+  --border: #d1d1d6;
+  --accent: #0a66d6;
+  --due-bg: #fff3d6;
+  --due-text: #8a5a00;
+  --done: #1f8a3a;
+  --error: #c4251c;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --card: #1c1c1e;
+    --text: #f2f2f7;
+    --muted: #a1a1a6;
+    --border: #3a3a3c;
+    --accent: #0a84ff;
+    --due-bg: #3d2e0a;
+    --due-text: #ffcc66;
+    --done: #4cd471;
+    --error: #ff6b61;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+main { max-width: 640px; margin: 0 auto; }
+
+header { max-width: 640px; margin: 0 auto; }
+h1 { font-size: 28px; margin: 16px 0 12px; }
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  list-style: none;
+}
+summary::-webkit-details-marker { display: none; }
+
+form { display: grid; gap: 12px; padding: 4px 0 8px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+label { display: grid; gap: 4px; font-size: 15px; color: var(--muted); min-width: 0; }
+
+input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
+button, .button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+
+.error { color: var(--error); margin: 0; font-size: 15px; }
+.muted { color: var(--muted); }
+
+.list { list-style: none; padding: 0; margin: 0; }
+
+.appt-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; }
+.appt-id { font-size: 20px; font-weight: 700; }
+.appt-when { width: 100%; font-size: 15px; color: var(--muted); }
+
+.badge {
+  margin-left: auto;
+  background: var(--due-bg);
+  color: var(--due-text);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mails { list-style: none; padding: 0; margin: 10px 0 0; border-top: 1px solid var(--border); }
+
+.mail {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.mail:last-child { border-bottom: 0; }
+.mail.is-due { background: var(--due-bg); }
+
+.mail-nr { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.mail-title { font-weight: 600; font-size: 16px; }
+.mail-state { font-size: 14px; color: var(--muted); }
+.is-due .mail-state { color: var(--due-text); font-weight: 600; }
+.is-sent .mail-state { color: var(--done); }
+.attach-hint { font-size: 14px; font-weight: 600; color: var(--due-text); }
+
+.mail .button { padding: 0 14px; }
+
+.sent-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  min-width: 56px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.sent-toggle input { width: 24px; min-height: 24px; height: 24px; margin: 0; }
