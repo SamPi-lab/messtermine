@@ -1,6 +1,6 @@
 # Messtermine
 
-Web-App für die Messtermine meiner Masterarbeit: Termine mit Probanden-ID anlegen, fällige Mails sehen, per Tipp in Apple Mail öffnen, Messung und Mail-Erinnerungen in den Kalender übernehmen. Läuft komplett im Browser, keine Namen oder Adressen gespeichert. Die Phasen-Dokumente liegen in der Git-Historie: Brainstorm, Align und Plan für Slice 01 unter `git show 96fb1ac`, Plan und Ergebnis für Slice 02 unter `git show 99ab894:03-plan-slice-02.md`.
+Web-App für die Messtermine meiner Masterarbeit: Termine mit Probanden-ID anlegen, bearbeiten und mit Status versehen, fällige Mails sehen, per Tipp in Apple Mail öffnen, Messung und Mail-Erinnerungen in den Kalender übernehmen. Läuft komplett im Browser, keine Namen oder Adressen gespeichert. Die Phasen-Dokumente liegen in der Git-Historie: Brainstorm, Align und Plan für Slice 01 unter `git show 96fb1ac`, Plan und Ergebnis für Slice 02 unter `git show 99ab894:03-plan-slice-02.md`, für Slice 03 unter `git show RESULT03:03-plan-slice-03.md`.
 
 ## Starten
 
@@ -20,13 +20,13 @@ node --test
 | Datei | Aufgabe |
 |-------|---------|
 | `index.html` / `style.css` | Grundgerüst und Aussehen |
-| `app.js` | Oberfläche: Formular, Liste, Speichern im `localStorage` |
-| `logic.js` | Fachregeln ohne Oberfläche: ID-Vorschlag, Fälligkeit, Vorlagen füllen, `mailto:`-Link |
+| `app.js` | Oberfläche: Formular (Anlegen und Bearbeiten), Liste, „Vergangen & abgesagt“, Speichern im `localStorage` |
+| `logic.js` | Fachregeln ohne Oberfläche: ID-Vorschlag, Prüfung der Eingaben, Bearbeiten (Häkchen zurücksetzen), Fälligkeit, Archiv-Regel, Vorlagen füllen, `mailto:`-Link |
 | `templates.js` | Die drei Mail-Vorlagen |
 | `ics.js` | Kalender-Datei pro Termin: Messung (Alarm 1 h vorher) + 3 Mail-Erinnerungen um 6:30, Zeitzone Europe/Berlin |
 | `tests/*.test.js` | Tests für `logic.js` und `ics.js` |
 
-Ablauf: Formular → `addAppointment()` → `localStorage` → `render()` → `dueMails()` + `fillTemplate()` + `mailtoHref()` → Liste mit „Öffnen“ → Häkchen → `setSent()` → `render()`. „Zum Kalender“ → `buildIcs()` → Download `P-07.ics`.
+Ablauf: Formular → `addAppointment()` → `localStorage` → `render()` → `dueMails()` + `fillTemplate()` + `mailtoHref()` → Liste mit „Öffnen“ → Häkchen → `setSent()` → `render()`. „Zum Kalender“ → `buildIcs()` → Download `P-07.ics`. „Bearbeiten“ → Formular oben → `validateAppointment()` → `applyEdit()` → ggf. Hinweis „Kalender prüfen“.
 
 ## Auf dem iPhone einstellen
 
@@ -36,7 +36,6 @@ Damit die Kalender-Erinnerung um 6:30 stehen bleibt, bis du sie wegwischst: Eins
 
 | Slice | Inhalt |
 |-------|--------|
-| 03 | Termin bearbeiten/löschen, Status geplant/durchgeführt/abgesagt, „Vergangene“ eingeklappt |
 | 04 | Einstellungen (Tage, Uhrzeit, Standarddauer) + Vorlagen bearbeiten |
 | 05 | Backup Export/Import + Hinweis, wenn das letzte Backup älter als 3 Tage ist |
 | 06 | PWA (offline, Home-Bildschirm) + GitHub Pages + Test auf dem iPhone (inkl. .ics-Import), Link zur App in den Kalendereinträgen |

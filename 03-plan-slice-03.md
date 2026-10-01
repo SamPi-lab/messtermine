@@ -119,3 +119,32 @@ Ab dem 04.10. trägst du echte Termine ein. Ein Tippfehler im Datum lässt sich 
 ### Nicht Teil meiner Definition of Done (prüfst du)
 1. **Rückfrage beim Löschen auf dem iPhone** (erst ab Slice 06 auf dem Gerät testbar)
 2. Gefühl im Alltag: Reicht „Bearbeiten → Status“ oder willst du doch den Ein-Tipp-Knopf (Entscheidung 3)?
+
+---
+
+## Ergebnis Slice 03
+
+**Status: ✅ fertig** (01.10.2026). Alle Kriterien aus A, B und C sind nachweislich erfüllt.
+
+### Nachweise
+- **A:** `node --test` → 35/35 grün (12 neue, 23 bisherige).
+- **B** (eingebauter Browser, 375 px, heute = 01.10.2026), Testdaten P-01 (11.10., Mail 1 gesendet), P-02 (29.09., durchgeführt, Mail 3 offen), P-03 (20.09., alles gesendet), P-04 (20.10., abgesagt):
+  - B1 „Bearbeiten“ an P-01 → Formular oben offen, „P-01 bearbeiten“, vorausgefüllt, Status-Feld, „Abbrechen“ und „Termin löschen“ sichtbar
+  - B3 ID P-02 eingetragen → „P-02 ist bereits vergeben.“, nichts gespeichert
+  - B2/B3b Datum 11.10. → 03.10., Dauer 45 → gespeichert, Häkchen von Mail 1 entfernt, Hinweis „Kalender prüfen: alte Einträge von P-01 löschen …“; nach Neuladen weiterhin geändert; Formular zurück auf „+ Neuer Termin“ mit P-05
+  - B4 „Abbrechen“ und Zuklappen → nichts geändert
+  - B5 „durchgeführt“ → grünes Abzeichen, kein Kalender-Hinweis; „abgesagt“ → im eingeklappten Bereich, ohne Mails und Kalender-Knopf
+  - ID p-10 → gespeichert als P-10, Hinweis „Kalender prüfen“
+  - B6 P-02 oben wegen offener Dank-Mail; abgehakt → „Vergangen & abgesagt (2)“ wird „(3)“, neueste zuerst; offener Bereich bleibt offen
+  - B7 Löschen verneint → bleibt; bestätigt → weg (auch im Speicher)
+  - B8 Konsole leer, kein horizontales Scrollen, alle Knöpfe ≥ 44 px, hell und dunkel geprüft
+- **C:** keine `console.log`-Reste, Testdaten im Browser gelöscht, README aktualisiert
+
+### Aufgefallen
+- Bearbeiten, Status und „Vergangene“ stecken in denselben drei Dateien; deshalb **ein** Commit statt der geplanten zwei.
+- Zuklappen des Formulars beim Bearbeiten wirkt wie „Abbrechen“.
+- Der Hinweis „Kalender prüfen“ kommt auch bei geändertem Datum oder geänderter Uhrzeit, nicht nur bei der ID.
+
+### Prüfst du
+1. Rückfrage beim Löschen und Hinweis „Kalender prüfen“ auf dem iPhone (Slice 06)
+2. Reicht „Bearbeiten → Status“ im Alltag, oder doch der Ein-Tipp-Knopf „✓ durchgeführt“?
