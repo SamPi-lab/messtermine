@@ -126,51 +126,18 @@ function downloadIcs(appointment) {
   download(new Blob([ics], { type: 'text/calendar' }), `${appointment.id}.ics`);
 }
 
-// iPhone: Teilen-Menü → „In Dateien sichern“; Mac: Download.
-// Erst nach erfolgreichem Teilen zählt das Backup; Abbrechen ändert nichts.
-async function exportBackup() {
-  const now = new Date();
-  const { text, lastBackupAt } = createBackup(state, now);
-  const file = new File([text], backupFileName(now), { type: 'application/json' });
-  let shared = false;
-  if (navigator.maxTouchPoints > 0 && navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file] });
-      shared = true;
-    } catch (error) {
-      if (error.name === 'AbortError') return;
-      // Teilen nicht möglich: wie auf dem Mac herunterladen
-    }
-  }
-  if (!shared) download(file, file.name);
+// Backup gespeichert: Zeitpunkt merken, Hinweis verschwindet
+function markBackedUp(lastBackupAt) {
   state.lastBackupAt = lastBackupAt;
   save();
   render();
 }
 
-async function importBackup(file) {
-  backupError.hidden = true;
-  const { data, error } = parseBackup(await file.text());
-  if (error) {
-    backupError.textContent = error;
-    backupError.hidden = false;
-    return;
-  }
-  const from = data.lastBackupAt ? ` vom ${formatBackupTime(data.lastBackupAt)}` : '';
-  const question = `Backup${from} mit ${countAppointments(data.appointments.length, 'Terminen')} wiederherstellen? `
-    + `Der aktuelle Stand mit ${countAppointments(state.appointments.length, 'Terminen')} und allen Einstellungen wird ersetzt.`;
-  if (!confirm(question)) return;
+// Backup wiederhergestellt: alles ersetzen
+function replaceState(data) {
   state = data;
   save();
-  closeForm();
   render();
-  fillSettingsForm(state.settings);
-  alert(`Backup wiederhergestellt: ${countAppointments(state.appointments.length, 'Termine')}.`);
-}
-
-// countAppointments(1, 'Terminen') → '1 Termin', countAppointments(12, 'Terminen') → '12 Terminen'
-function countAppointments(n, plural) {
-  return n === 1 ? '1 Termin' : `${n} ${plural}`;
 }
 
 // --- Anzeige: Liste → Termin → Mail ----------------------------------------
@@ -454,6 +421,50 @@ settingsForm.addEventListener('submit', (event) => {
 });
 
 // --- Backup -----------------------------------------------------------------
+
+// iPhone: Teilen-Menü → „In Dateien sichern“; Mac: Download.
+// Erst nach erfolgreichem Teilen zählt das Backup; Abbrechen ändert nichts.
+async function exportBackup() {
+  const now = new Date();
+  const { text, lastBackupAt } = createBackup(state, now);
+  const file = new File([text], backupFileName(now), { type: 'application/json' });
+  let shared = false;
+  if (navigator.maxTouchPoints > 0 && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      shared = true;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      // Teilen nicht möglich: wie auf dem Mac herunterladen
+    }
+  }
+  if (!shared) download(file, file.name);
+  markBackedUp(lastBackupAt);
+}
+
+async function importBackup(file) {
+  backupError.hidden = true;
+  const { data, error } = parseBackup(await file.text());
+  if (error) {
+    backupError.textContent = error;
+    backupError.hidden = false;
+    return;
+  }
+  const from = data.lastBackupAt ? ` vom ${formatBackupTime(data.lastBackupAt)}` : '';
+  const question = `Backup${from} mit ${countAppointments(data.appointments.length, 'Terminen')} wiederherstellen? `
+    + `Der aktuelle Stand mit ${countAppointments(state.appointments.length, 'Terminen')} und allen Einstellungen wird ersetzt.`;
+  if (!confirm(question)) return;
+  formPanel.open = false; // offenes Bearbeiten verwerfen; render() öffnet es wieder, wenn keine Termine da sind
+  replaceState(data);
+  resetForm(); // ID-Vorschlag aus den wiederhergestellten Terminen
+  fillSettingsForm(state.settings);
+  alert(`Backup wiederhergestellt: ${countAppointments(state.appointments.length, 'Termine')}.`);
+}
+
+// countAppointments(1, 'Terminen') → '1 Termin', countAppointments(12, 'Terminen') → '12 Terminen'
+function countAppointments(n, plural) {
+  return n === 1 ? '1 Termin' : `${n} ${plural}`;
+}
 
 document.getElementById('backup-now').addEventListener('click', exportBackup);
 document.getElementById('backup-save').addEventListener('click', exportBackup);
