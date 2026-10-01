@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   suggestNextId, formatDateDe, dueDate, dueMails, fillTemplate, mailtoHref, sortAppointments,
+  isArchived, validateAppointment, applyEdit,
 } from '../logic.js';
 import { TEMPLATES } from '../templates.js';
 
@@ -80,4 +81,86 @@ test('Sortierung nach Datum und Uhrzeit', () => {
     { id: 'P-03', date: '2026-10-05', time: '08:30' },
   ];
   assert.deepEqual(sortAppointments(list).map((a) => a.id), ['P-02', 'P-03', 'P-01']);
+});
+
+// --- Slice 03: Status, Vergangene, Prüfung, Bearbeiten ---------------------
+
+const withStatus = (status, date = '2026-10-14', sent = {}) => ({ ...appt(date, sent), status });
+
+test('S3-A1 Mail 1/2 verfallen nach dem Messtag', () => {
+  assert.deepEqual(dueMails(appt('2026-10-14'), '2026-10-15'), [3]);
+});
+
+test('S3-A2 am Messtag sind Mail 1/2 noch fällig', () => {
+  assert.deepEqual(dueMails(appt('2026-10-14'), '2026-10-14'), [1, 2]);
+});
+
+test('S3-A3 durchgeführt: nur noch Mail 3', () => {
+  assert.deepEqual(dueMails(withStatus('durchgeführt'), '2026-10-14'), []);
+  assert.deepEqual(dueMails(withStatus('durchgeführt'), '2026-10-15'), [3]);
+});
+
+test('S3-A4 abgesagt: keine Mail fällig', () => {
+  assert.deepEqual(dueMails(withStatus('abgesagt'), '2026-10-15'), []);
+});
+
+test('S3-A5 abgesagt in der Zukunft ist archiviert', () => {
+  assert.equal(isArchived(withStatus('abgesagt', '2026-11-20'), '2026-10-01'), true);
+});
+
+test('S3-A6 gestern mit offener Dank-Mail bleibt oben', () => {
+  assert.equal(isArchived(appt('2026-10-14'), '2026-10-15'), false);
+  assert.equal(isArchived(appt('2026-10-14', { 3: true }), '2026-10-15'), true);
+});
+
+test('S3-A7 heute oder Zukunft, geplant: nicht archiviert', () => {
+  assert.equal(isArchived(appt('2026-10-14'), '2026-10-14'), false);
+  assert.equal(isArchived(appt('2026-10-14', { 1: true, 2: true, 3: true }), '2026-10-14'), false);
+  assert.equal(isArchived(appt('2026-10-20'), '2026-10-14'), false);
+});
+
+const input = (changes = {}) => ({ id: 'P-08', date: '2026-10-14', time: '10:00', durationMin: 60, ...changes });
+
+test('S3-A8 Prüfung der Eingaben', () => {
+  const list = [appt('2026-10-14')];
+  assert.equal(validateAppointment(input(), list), null);
+  assert.equal(validateAppointment(input({ id: '7' }), list), 'Bitte eine ID im Format P-01 eingeben.');
+  assert.equal(validateAppointment(input({ id: 'P-07' }), list), 'P-07 ist bereits vergeben.');
+  assert.equal(validateAppointment(input({ date: '' }), list), 'Bitte ein Datum wählen.');
+  assert.equal(validateAppointment(input({ time: '' }), list), 'Bitte eine Uhrzeit wählen.');
+  assert.equal(validateAppointment(input({ durationMin: 300 }), list), 'Dauer bitte zwischen 5 und 240 Minuten.');
+});
+
+test('S3-A9 Bearbeiten mit eigener ID ist kein Doppel', () => {
+  const list = [appt('2026-10-14'), { ...appt('2026-10-20'), id: 'P-08' }];
+  assert.equal(validateAppointment(input({ id: 'P-07' }), list, 'P-07'), null);
+  assert.equal(validateAppointment(input({ id: 'P-08' }), list, 'P-07'), 'P-08 ist bereits vergeben.');
+});
+
+const edit = (changes) => ({ id: 'P-07', date: '2026-10-14', time: '10:00', durationMin: 60, status: 'geplant', ...changes });
+
+test('S3-A10 Datum oder Uhrzeit geändert: Häkchen weg, Kalender prüfen', () => {
+  for (const changes of [{ date: '2026-10-16' }, { time: '11:00' }]) {
+    const result = applyEdit(appt('2026-10-14', { 1: true }), edit(changes));
+    assert.deepEqual(result.appointment.sent, { 1: false, 2: false, 3: false });
+    assert.equal(result.checkCalendar, true);
+  }
+});
+
+test('S3-A11 nur Dauer oder Status geändert: Häkchen bleiben', () => {
+  for (const changes of [{ durationMin: 45 }, { status: 'durchgeführt' }]) {
+    const result = applyEdit(appt('2026-10-14', { 1: true }), edit(changes));
+    assert.deepEqual(result.appointment.sent, { 1: true, 2: false, 3: false });
+    assert.equal(result.checkCalendar, false);
+    assert.equal(result.appointment[Object.keys(changes)[0]], Object.values(changes)[0]);
+  }
+});
+
+test('S3-A12 nur ID geändert: Häkchen bleiben, Kalender prüfen', () => {
+  const original = appt('2026-10-14', { 1: true });
+  const result = applyEdit(original, edit({ id: 'P-70' }));
+  assert.equal(result.appointment.id, 'P-70');
+  assert.deepEqual(result.appointment.sent, { 1: true, 2: false, 3: false });
+  assert.equal(result.checkCalendar, true);
+  assert.equal(original.id, 'P-07', 'Original bleibt unverändert');
 });
