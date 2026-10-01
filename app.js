@@ -1,6 +1,8 @@
-// Oberfläche der App. Jede Aktion folgt demselben Muster:
+// Oberfläche der App. Jede Aktion (Abschnitt „Aktionen“) folgt demselben Muster:
 //   Zustand ändern → save() → render()
-// render() baut beide Listen (aktuell, vergangen & abgesagt) aus dem Zustand neu auf.
+// render() baut beide Listen (aktuell, vergangen & abgesagt) und den Backup-Hinweis
+// aus dem Zustand neu auf. Die Abschnitte darunter verdrahten Knöpfe und Formulare
+// mit den Aktionen; Rückfragen und Fehlertexte stehen dort, nicht in den Aktionen.
 // Das Formular oben dient zum Anlegen und, mit editingId, zum Bearbeiten.
 // Die Einstellungen sind eine eigene Ansicht unter #einstellungen über der Liste.
 // Die Fachregeln (Fälligkeit, Vorlagen füllen, mailto) stehen in logic.js,
