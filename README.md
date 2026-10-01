@@ -1,6 +1,6 @@
 # Messtermine
 
-Web-App für die Messtermine meiner Masterarbeit: Termine mit Probanden-ID anlegen, bearbeiten und mit Status versehen, fällige Mails sehen, per Tipp in Apple Mail öffnen, Messung und Mail-Erinnerungen in den Kalender übernehmen. Läuft komplett im Browser, keine Namen oder Adressen gespeichert. Die Phasen-Dokumente liegen in der Git-Historie: Brainstorm, Align und Plan für Slice 01 unter `git show 96fb1ac`, Plan und Ergebnis für Slice 02 unter `git show 99ab894:03-plan-slice-02.md`, für Slice 03 unter `git show 997f17a:03-plan-slice-03.md`.
+Web-App für die Messtermine meiner Masterarbeit: Termine mit Probanden-ID anlegen, bearbeiten und mit Status versehen, fällige Mails sehen, per Tipp in Apple Mail öffnen, Messung und Mail-Erinnerungen in den Kalender übernehmen. Läuft komplett im Browser, keine Namen oder Adressen gespeichert. Die Phasen-Dokumente liegen in der Git-Historie: Brainstorm, Align und Plan für Slice 01 unter `git show 96fb1ac`, Plan und Ergebnis für Slice 02 unter `git show 99ab894:03-plan-slice-02.md`, für Slice 03 unter `git show 997f17a:03-plan-slice-03.md`, Plan für Slice 04 (noch nicht gebaut) unter `git show 3b4c758:03-plan-slice-04.md`.
 
 ## Starten
 
@@ -36,7 +36,7 @@ Damit die Kalender-Erinnerung um 6:30 stehen bleibt, bis du sie wegwischst: Eins
 
 | Slice | Inhalt |
 |-------|--------|
-| 04 | Einstellungen (Tage, Uhrzeit, Standarddauer) + Vorlagen bearbeiten |
+| 04 | Einstellungen als eigene Seite (Mail-Tage für neue Termine, Uhrzeit, Standarddauer, Standard-Ort) + Vorlagen bearbeiten + Ort pro Termin |
 | 05 | Backup Export/Import + Hinweis, wenn das letzte Backup älter als 3 Tage ist |
 | 06 | PWA (offline, Home-Bildschirm) + GitHub Pages + Test auf dem iPhone (inkl. .ics-Import), Link zur App in den Kalendereinträgen |
 
