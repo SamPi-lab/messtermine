@@ -67,7 +67,7 @@ form { display: grid; gap: 12px; padding: 4px 0 8px; }
 
 label { display: grid; gap: 4px; font-size: 15px; color: var(--muted); min-width: 0; }
 
-input, select {
+input, select, textarea {
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -171,3 +171,39 @@ button, .button {
 .archive > summary { color: var(--muted); }
 .archive > summary::before { content: "▸"; width: 1.2em; }
 .archive[open] > summary::before { content: "▾"; }
+
+.settings-link { width: 100%; margin-top: 12px; }
+
+/* Einstellungen: eigene Seite über der Liste, schiebt von rechts herein */
+.settings-view {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--bg);
+  padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));
+  animation: slide-in 0.3s ease-out;
+}
+.settings-view > * { max-width: 640px; margin-left: auto; margin-right: auto; }
+.settings-view.is-leaving { animation: slide-out 0.25s ease-in forwards; }
+@keyframes slide-in { from { transform: translateX(100%); } }
+@keyframes slide-out { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .settings-view, .settings-view.is-leaving { animation: none; }
+}
+.settings-open body { overflow: hidden; }
+
+.back {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0;
+  margin-top: 8px;
+  background: none;
+  color: var(--accent);
+  font-weight: 400;
+}
+.settings-view h1 { margin-top: 4px; }
+.settings-view .card, .template-fields { display: grid; gap: 12px; margin-bottom: 0; }
+.settings-view h2 { font-size: 17px; margin: 4px 0 0; }
+.hint { margin: 0; font-size: 15px; }
+textarea { min-height: 280px; line-height: 1.4; resize: vertical; }
+.template-fields .secondary { justify-self: start; }

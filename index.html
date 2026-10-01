@@ -56,6 +56,44 @@
       <summary id="archive-title"></summary>
       <ul id="archive-list" class="list"></ul>
     </details>
+
+    <a href="#einstellungen" id="open-settings" class="button secondary settings-link">⚙︎ Einstellungen</a>
   </main>
+
+  <section id="settings-view" class="settings-view" hidden aria-labelledby="settings-title">
+    <button type="button" id="settings-back" class="back">‹ Termine</button>
+    <h1 id="settings-title">Einstellungen</h1>
+    <form id="settings-form" novalidate>
+      <section class="card">
+        <h2>Mails</h2>
+        <p class="muted hint">Die Tage gelten für Termine, die du ab jetzt anlegst.</p>
+        <label>Mail 1 (Vorbereitung): Tage vor der Messung
+          <input name="days1" type="number" inputmode="numeric" min="1" max="14" required>
+        </label>
+        <label>Mail 2 (Erinnerung): Tage vor der Messung
+          <input name="days2" type="number" inputmode="numeric" min="0" max="14" required>
+        </label>
+        <label>Mail 3 (Dank + Video): Tage nach der Messung
+          <input name="days3" type="number" inputmode="numeric" min="0" max="14" required>
+        </label>
+        <label>Kalender-Erinnerung an die Mails um
+          <input name="reminderTime" type="time" step="300" required>
+        </label>
+      </section>
+      <section class="card">
+        <h2>Neue Termine</h2>
+        <label>Standarddauer (Min)
+          <input name="durationMin" type="number" inputmode="numeric" min="5" max="240" step="5" required>
+        </label>
+        <label>Standard-Ort
+          <input name="location" required autocomplete="off">
+        </label>
+      </section>
+      <p class="muted hint">Platzhalter in den Vorlagen: {Datum}, {Uhrzeit}, {Ort}</p>
+      <div id="template-fields" class="template-fields"></div>
+      <p id="settings-error" class="error" role="alert" hidden></p>
+      <button type="submit" class="primary">Einstellungen speichern</button>
+    </form>
+  </section>
 </body>
 </html>

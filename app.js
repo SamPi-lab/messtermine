@@ -2,6 +2,7 @@
 //   Zustand ändern → save() → render()
 // render() baut beide Listen (aktuell, vergangen & abgesagt) aus dem Zustand neu auf.
 // Das Formular oben dient zum Anlegen und, mit editingId, zum Bearbeiten.
+// Die Einstellungen sind eine eigene Ansicht unter #einstellungen über der Liste.
 // Die Fachregeln (Fälligkeit, Vorlagen füllen, mailto) stehen in logic.js,
 // die Kalender-Datei in ics.js, Standardwerte und Prüfung der Einstellungen in settings.js.
 
@@ -10,7 +11,9 @@ import {
   fillTemplate, mailtoHref, todayStr, isArchived, validateAppointment, applyEdit,
 } from './logic.js';
 import { buildIcs } from './ics.js';
-import { withAppointmentDefaults, withDefaults } from './settings.js';
+import {
+  DEFAULT_SETTINGS, withAppointmentDefaults, withDefaults, validateSettings,
+} from './settings.js';
 import { TEMPLATES } from './templates.js';
 
 const STORAGE_KEY = 'probanden-termine';
@@ -27,6 +30,12 @@ const empty = document.getElementById('empty');
 const archive = document.getElementById('archive');
 const archiveTitle = document.getElementById('archive-title');
 const archiveList = document.getElementById('archive-list');
+const openSettingsLink = document.getElementById('open-settings');
+const settingsView = document.getElementById('settings-view');
+const settingsBack = document.getElementById('settings-back');
+const settingsForm = document.getElementById('settings-form');
+const settingsError = document.getElementById('settings-error');
+const templateFields = document.getElementById('template-fields');
 
 // --- Zustand: lesen und speichern -----------------------------------------
 // Im localStorage steht { version: 1, appointments: [Termin, …], settings }.
@@ -268,7 +277,114 @@ formPanel.addEventListener('toggle', () => {
   if (!formPanel.open && editingId) resetForm();
 });
 
+// --- Einstellungen: eigene Ansicht unter #einstellungen ----------------------
+// Öffnen und Schließen laufen über die Adresse, damit auch „Zurück“ des Browsers
+// funktioniert. Ungespeicherte Eingaben verfallen: Beim Öffnen wird neu gefüllt.
+
+const SETTINGS_HASH = '#einstellungen';
+let settingsOpenedFromList = false; // dann führt „‹ Termine“ per history.back() zurück
+
+function renderTemplateFields() {
+  templateFields.replaceChildren(...[1, 2, 3].map((nr) => {
+    const reset = el('button', { type: 'button', class: 'secondary' }, 'Standardtext');
+    reset.addEventListener('click', () => {
+      settingsForm.elements[`subject${nr}`].value = DEFAULT_SETTINGS.templates[nr].subject;
+      settingsForm.elements[`body${nr}`].value = DEFAULT_SETTINGS.templates[nr].body;
+    });
+    return el('section', { class: 'card' },
+      el('h2', {}, `Mail ${nr} · ${TEMPLATES[nr].title}`),
+      el('label', {}, 'Betreff', el('input', { name: `subject${nr}`, autocomplete: 'off' })),
+      el('label', {}, 'Text', el('textarea', { name: `body${nr}` })),
+      reset);
+  }));
+}
+
+function fillSettingsForm(settings) {
+  const f = settingsForm.elements;
+  f.days1.value = -settings.mailOffsets[1];
+  f.days2.value = -settings.mailOffsets[2];
+  f.days3.value = settings.mailOffsets[3];
+  f.reminderTime.value = settings.reminderTime;
+  f.durationMin.value = settings.durationMin;
+  f.location.value = settings.location;
+  for (const nr of [1, 2, 3]) {
+    f[`subject${nr}`].value = settings.templates[nr].subject;
+    f[`body${nr}`].value = settings.templates[nr].body;
+  }
+}
+
+function readSettingsForm() {
+  const f = settingsForm.elements;
+  const number = (name) => (f[name].value === '' ? NaN : Number(f[name].value));
+  return {
+    mailOffsets: { 1: 0 - number('days1'), 2: 0 - number('days2'), 3: number('days3') },
+    reminderTime: f.reminderTime.value,
+    durationMin: number('durationMin'),
+    location: f.location.value.trim(),
+    templates: Object.fromEntries([1, 2, 3].map((nr) => [nr, {
+      subject: f[`subject${nr}`].value.trim(),
+      body: f[`body${nr}`].value.trim(),
+    }])),
+  };
+}
+
+function openSettings() {
+  fillSettingsForm(state.settings);
+  settingsError.hidden = true;
+  settingsView.classList.remove('is-leaving');
+  settingsView.hidden = false;
+  settingsView.scrollTop = 0;
+  document.documentElement.classList.add('settings-open');
+}
+
+function closeSettings() {
+  settingsOpenedFromList = false;
+  document.documentElement.classList.remove('settings-open');
+  if (settingsView.hidden) return;
+  settingsView.classList.add('is-leaving'); // schiebt nach rechts hinaus, dann animationend
+  // Ohne Animation („Bewegung reduzieren“) kommt kein animationend: sofort ausblenden
+  if (getComputedStyle(settingsView).animationName === 'none') settingsView.hidden = true;
+}
+
+function leaveSettings() {
+  if (settingsOpenedFromList) return history.back(); // löst hashchange aus
+  history.replaceState(null, '', location.pathname + location.search);
+  closeSettings();
+}
+
+settingsView.addEventListener('animationend', () => {
+  if (!settingsView.classList.contains('is-leaving')) return;
+  settingsView.classList.remove('is-leaving');
+  settingsView.hidden = true;
+});
+
+window.addEventListener('hashchange', () => {
+  if (location.hash === SETTINGS_HASH) openSettings();
+  else closeSettings();
+});
+
+openSettingsLink.addEventListener('click', () => { settingsOpenedFromList = true; });
+settingsBack.addEventListener('click', leaveSettings);
+
+settingsForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const input = readSettingsForm();
+  const error = validateSettings(input);
+  if (error) {
+    settingsError.textContent = error;
+    settingsError.hidden = false;
+    return;
+  }
+  state.settings = input;
+  save();
+  render();
+  if (!editingId) resetForm(); // neue Standarddauer und neuen Ort ins Formular übernehmen
+  leaveSettings();
+});
+
 // --- Start ------------------------------------------------------------------
 
+renderTemplateFields();
 resetForm();
 render();
+if (location.hash === SETTINGS_HASH) openSettings();
