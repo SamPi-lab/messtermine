@@ -30,27 +30,34 @@ const VTIMEZONE = [
   'END:VTIMEZONE',
 ];
 
-// { date: 'YYYY-MM-DD', time: 'HH:MM' } + Minuten, auch über Mitternacht
-function addMinutes({ date, time }, minutes) {
+// Ein Zeitpunkt ist hier immer { date: 'YYYY-MM-DD', time: 'HH:MM' } in Ortszeit.
+const pad = (n) => String(n).padStart(2, '0');
+const minutesOfDay = (time) => {
   const [h, m] = time.split(':').map(Number);
-  const total = h * 60 + m + minutes;
-  const pad = (n) => String(n).padStart(2, '0');
-  const inDay = ((total % 1440) + 1440) % 1440;
+  return h * 60 + m;
+};
+
+function localDateTime(now) {
+  return { date: todayStr(now), time: `${pad(now.getHours())}:${pad(now.getMinutes())}` };
+}
+
+function isBefore(a, b) {
+  return `${a.date} ${a.time}` < `${b.date} ${b.time}`;
+}
+
+// Zeitpunkt + Minuten, auch über Mitternacht
+function addMinutes({ date, time }, minutes) {
+  const total = minutesOfDay(time) + minutes;
+  const inDay = total % 1440;
   return {
     date: addDays(date, Math.floor(total / 1440)),
     time: `${pad(Math.floor(inDay / 60))}:${pad(inDay % 60)}`,
   };
 }
 
-// Vergangene Erinnerung: 5–10 Min nach jetzt, auf volle 5 Minuten
-function soonAfter(now) {
-  const minutes = now.getHours() * 60 + now.getMinutes();
-  return addMinutes({ date: todayStr(now), time: '00:00' }, Math.floor(minutes / 5) * 5 + 10);
-}
-
-function localNow(now) {
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${todayStr(now)} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+// 5–10 Min nach jetzt, auf volle 5 Minuten (07:02 → 07:10)
+function soonAfter(nowLocal) {
+  return addMinutes(nowLocal, 10 - (minutesOfDay(nowLocal.time) % 5));
 }
 
 export function calendarEvents(appointment, now) {
@@ -64,10 +71,12 @@ export function calendarEvents(appointment, now) {
     trigger: '-PT1H',
   }];
 
+  const nowLocal = localDateTime(now);
   for (const nr of [1, 2, 3]) {
     if (appointment.sent[nr]) continue;
     let reminder = { date: addDays(appointment.date, MAIL_OFFSETS[nr]), time: REMINDER_TIME };
-    if (`${reminder.date} ${reminder.time}` < localNow(now)) reminder = soonAfter(now);
+    // Ein Alarm in der Vergangenheit meldet sich nie: dann kurz nach jetzt erinnern
+    if (isBefore(reminder, nowLocal)) reminder = soonAfter(nowLocal);
     events.push({
       uid: `${appointment.id}-mail${nr}@messtermine`,
       summary: `${appointment.id} Mail ${nr}`,
