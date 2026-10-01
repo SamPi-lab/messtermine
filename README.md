@@ -1,6 +1,6 @@
 # Messtermine
 
-Web-App für die Messtermine meiner Masterarbeit: Termine mit Probanden-ID anlegen, bearbeiten und mit Status versehen, fällige Mails sehen, per Tipp in Apple Mail öffnen, Messung und Mail-Erinnerungen in den Kalender übernehmen. Läuft komplett im Browser, keine Namen oder Adressen gespeichert. Die Phasen-Dokumente liegen in der Git-Historie: Brainstorm, Align und Plan für Slice 01 unter `git show 96fb1ac`, Plan und Ergebnis für Slice 02 unter `git show 99ab894:03-plan-slice-02.md`, für Slice 03 unter `git show RESULT03:03-plan-slice-03.md`.
+Web-App für die Messtermine meiner Masterarbeit: Termine mit Probanden-ID anlegen, bearbeiten und mit Status versehen, fällige Mails sehen, per Tipp in Apple Mail öffnen, Messung und Mail-Erinnerungen in den Kalender übernehmen. Läuft komplett im Browser, keine Namen oder Adressen gespeichert. Die Phasen-Dokumente liegen in der Git-Historie: Brainstorm, Align und Plan für Slice 01 unter `git show 96fb1ac`, Plan und Ergebnis für Slice 02 unter `git show 99ab894:03-plan-slice-02.md`, für Slice 03 unter `git show 997f17a:03-plan-slice-03.md`.
 
 ## Starten
 
