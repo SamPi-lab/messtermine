@@ -61,6 +61,6 @@ Damit die Kalender-Erinnerung um 6:30 stehen bleibt, bis du sie wegwischst: Eins
 - **Speichern:** Einstellungen → „Backup speichern“ (oder „Jetzt sichern“ im gelben Hinweis, der erscheint, wenn das letzte Backup älter als 3 Tage ist). Auf dem iPhone öffnet sich das Teilen-Menü: „In Dateien sichern“ → iCloud Drive → Claude → Backup App. Auf dem Mac landet die Datei im Download-Ordner.
 - **Wiederherstellen:** Einstellungen → „Backup wiederherstellen“ → Datei `messtermine-backup-JJJJ-MM-TT.json` wählen → bestätigen. Ersetzt alle Termine und Einstellungen.
 
-## Offene Punkte
+## Stand
 
-Alle geplanten Slices sind umgesetzt. Auf dem iPhone noch zu prüfen: „Zum Kalender“ in der Home-Bildschirm-App (erscheint „Alle hinzufügen“? sonst auf das Teilen-Menü umbauen) · Darstellung der Mail in Apple Mail · doppelter .ics-Export: ersetzt oder verdoppelt Apple Kalender die Einträge? · Start im Flugmodus.
+Alle geplanten Slices sind umgesetzt und am 01.10.2026 auf dem iPhone getestet (Installieren, Backup wiederherstellen, „Zum Kalender“, Mail in Apple Mail, Backup speichern, Start im Flugmodus).
