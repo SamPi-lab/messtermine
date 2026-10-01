@@ -1,12 +1,13 @@
 // Oberfläche der App. Jede Aktion folgt demselben Muster:
 //   Zustand ändern → save() → render()
-// render() baut die komplette Liste aus dem Zustand neu auf.
+// render() baut beide Listen (aktuell, vergangen & abgesagt) aus dem Zustand neu auf.
+// Das Formular oben dient zum Anlegen und, mit editingId, zum Bearbeiten.
 // Die Fachregeln (Fälligkeit, Vorlagen füllen, mailto) stehen in logic.js,
 // die Kalender-Datei in ics.js.
 
 import {
   suggestNextId, sortAppointments, dueDate, dueMails, formatDateDe,
-  fillTemplate, mailtoHref, todayStr,
+  fillTemplate, mailtoHref, todayStr, isArchived, validateAppointment, applyEdit,
 } from './logic.js';
 import { buildIcs } from './ics.js';
 import { TEMPLATES } from './templates.js';
@@ -14,10 +15,17 @@ import { TEMPLATES } from './templates.js';
 const STORAGE_KEY = 'probanden-termine';
 
 const form = document.getElementById('appointment-form');
+const formTitle = document.getElementById('form-title');
 const formError = document.getElementById('form-error');
+const statusField = document.getElementById('status-field');
+const cancelEdit = document.getElementById('cancel-edit');
+const deleteButton = document.getElementById('delete-appointment');
 const newAppointment = document.getElementById('new-appointment');
 const list = document.getElementById('appointment-list');
 const empty = document.getElementById('empty');
+const archive = document.getElementById('archive');
+const archiveTitle = document.getElementById('archive-title');
+const archiveList = document.getElementById('archive-list');
 
 // --- Zustand: lesen und speichern -----------------------------------------
 
@@ -36,6 +44,7 @@ function save() {
 }
 
 let state = load();
+let editingId = null; // ID des Termins im Formular, null = neuer Termin
 
 // --- Aktionen ---------------------------------------------------------------
 
@@ -43,6 +52,22 @@ function addAppointment({ id, date, time, durationMin }) {
   state.appointments.push({
     id, date, time, durationMin, status: 'geplant', sent: { 1: false, 2: false, 3: false },
   });
+  save();
+  render();
+}
+
+// Gibt zurück, ob die Kalendereinträge geprüft werden müssen
+function updateAppointment(oldId, changes) {
+  const index = state.appointments.findIndex((a) => a.id === oldId);
+  const { appointment, checkCalendar } = applyEdit(state.appointments[index], changes);
+  state.appointments[index] = appointment;
+  save();
+  render();
+  return checkCalendar;
+}
+
+function deleteAppointment(id) {
+  state.appointments = state.appointments.filter((a) => a.id !== id);
   save();
   render();
 }
@@ -67,25 +92,46 @@ function downloadIcs(appointment) {
 function render() {
   const today = todayStr();
   const sorted = sortAppointments(state.appointments);
-  list.replaceChildren(...sorted.map((a) => renderAppointment(a, today)));
+  const current = sorted.filter((a) => !isArchived(a, today));
+  const past = sorted.filter((a) => isArchived(a, today)).reverse(); // neueste zuerst
+  list.replaceChildren(...current.map((a) => renderAppointment(a, today)));
+  archiveList.replaceChildren(...past.map((a) => renderAppointment(a, today)));
+  archiveTitle.textContent = `Vergangen & abgesagt (${past.length})`;
+  archive.hidden = past.length === 0;
   empty.hidden = sorted.length > 0;
   if (!sorted.length) newAppointment.open = true;
 }
 
+const STATUS_BADGE = { durchgeführt: 'is-done', abgesagt: 'is-cancelled' };
+
 function renderAppointment(appointment, today) {
   const due = dueMails(appointment, today);
+  const cancelled = appointment.status === 'abgesagt';
   const head = el('div', { class: 'appt-head' },
     el('span', { class: 'appt-id' }, appointment.id));
+  if (STATUS_BADGE[appointment.status]) {
+    head.append(el('span', { class: `status ${STATUS_BADGE[appointment.status]}` }, appointment.status));
+  }
   if (due.length) {
     head.append(el('span', { class: 'badge' }, due.length === 1 ? '1 Mail fällig' : `${due.length} Mails fällig`));
   }
   head.append(el('span', { class: 'appt-when' },
     `${formatDateDe(appointment.date)} · ${appointment.time} Uhr · ${appointment.durationMin} Min`));
 
-  const mails = el('ul', { class: 'mails' }, ...[1, 2, 3].map((nr) => renderMail(appointment, nr, due)));
-  const calendar = el('button', { type: 'button', class: 'secondary calendar' }, '📅 Zum Kalender');
-  calendar.addEventListener('click', () => downloadIcs(appointment));
-  return el('li', { class: 'card', 'data-id': appointment.id }, head, mails, calendar);
+  const edit = el('button', { type: 'button', class: 'secondary' }, 'Bearbeiten');
+  edit.addEventListener('click', () => startEdit(appointment));
+  const actions = el('div', { class: 'card-actions' }, edit);
+  const card = el('li', { class: cancelled ? 'card is-cancelled' : 'card', 'data-id': appointment.id }, head);
+
+  // Abgesagt: keine Mails und kein Kalender mehr, nur noch Bearbeiten (z. B. Absage zurücknehmen)
+  if (!cancelled) {
+    card.append(el('ul', { class: 'mails' }, ...[1, 2, 3].map((nr) => renderMail(appointment, nr, due))));
+    const calendar = el('button', { type: 'button', class: 'secondary' }, '📅 Zum Kalender');
+    calendar.addEventListener('click', () => downloadIcs(appointment));
+    actions.prepend(calendar);
+  }
+  card.append(actions);
+  return card;
 }
 
 function renderMail(appointment, nr, due) {
@@ -130,12 +176,33 @@ function el(tag, attrs = {}, ...children) {
   return node;
 }
 
-// --- Formular „Neuer Termin“ ------------------------------------------------
+// --- Formular „Neuer Termin“ / „P-07 bearbeiten“ ---------------------------
+
+function setEditMode(id) {
+  editingId = id;
+  formTitle.textContent = id ? `${id} bearbeiten` : '+ Neuer Termin';
+  statusField.hidden = cancelEdit.hidden = deleteButton.hidden = !id;
+  formError.hidden = true;
+}
 
 function resetForm() {
   form.reset();
   form.elements.id.value = suggestNextId(state.appointments);
-  formError.hidden = true;
+  setEditMode(null);
+}
+
+function startEdit(appointment) {
+  for (const name of ['id', 'date', 'time', 'durationMin', 'status']) {
+    form.elements[name].value = appointment[name];
+  }
+  setEditMode(appointment.id);
+  newAppointment.open = true;
+  newAppointment.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeForm() {
+  newAppointment.open = false;
+  resetForm();
 }
 
 function showError(message) {
@@ -145,20 +212,35 @@ function showError(message) {
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();
-  const id = form.elements.id.value.trim().toUpperCase();
-  const date = form.elements.date.value;
-  const time = form.elements.time.value;
-  const durationMin = Number(form.elements.durationMin.value);
+  const input = {
+    id: form.elements.id.value.trim().toUpperCase(),
+    date: form.elements.date.value,
+    time: form.elements.time.value,
+    durationMin: Number(form.elements.durationMin.value),
+  };
+  const error = validateAppointment(input, state.appointments, editingId);
+  if (error) return showError(error);
 
-  if (!/^P-\d+$/.test(id)) return showError('Bitte eine ID im Format P-01 eingeben.');
-  if (state.appointments.some((a) => a.id === id)) return showError(`${id} ist bereits vergeben.`);
-  if (!date) return showError('Bitte ein Datum wählen.');
-  if (!time) return showError('Bitte eine Uhrzeit wählen.');
-  if (!(durationMin >= 5 && durationMin <= 240)) return showError('Dauer bitte zwischen 5 und 240 Minuten.');
+  const oldId = editingId;
+  const status = form.elements.status.value; // vor closeForm(), das setzt das Formular zurück
+  closeForm();
+  if (!oldId) return addAppointment(input);
+  const checkCalendar = updateAppointment(oldId, { ...input, status });
+  if (checkCalendar) alert(`Kalender prüfen: alte Einträge von ${oldId} löschen und „Zum Kalender“ neu tippen.`);
+});
 
-  newAppointment.open = false;
-  addAppointment({ id, date, time, durationMin });
-  resetForm();
+cancelEdit.addEventListener('click', closeForm);
+
+deleteButton.addEventListener('click', () => {
+  if (!confirm(`${editingId} wirklich löschen? Kalendereinträge löschst du von Hand.`)) return;
+  const id = editingId;
+  closeForm();
+  deleteAppointment(id);
+});
+
+// Zuklappen beim Bearbeiten heißt Abbrechen
+newAppointment.addEventListener('toggle', () => {
+  if (!newAppointment.open && editingId) resetForm();
 });
 
 // --- Start ------------------------------------------------------------------

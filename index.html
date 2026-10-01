@@ -14,7 +14,7 @@
 
   <main>
     <details id="new-appointment" class="card">
-      <summary>+ Neuer Termin</summary>
+      <summary id="form-title">+ Neuer Termin</summary>
       <form id="appointment-form" novalidate>
         <label>Probanden-ID
           <input name="id" required autocomplete="off" autocapitalize="characters">
@@ -30,13 +30,29 @@
         <label>Dauer (Min)
           <input name="durationMin" type="number" inputmode="numeric" min="5" max="240" step="5" value="60" required>
         </label>
+        <label id="status-field" hidden>Status
+          <select name="status">
+            <option value="geplant">geplant</option>
+            <option value="durchgeführt">durchgeführt</option>
+            <option value="abgesagt">abgesagt</option>
+          </select>
+        </label>
         <p id="form-error" class="error" role="alert" hidden></p>
-        <button type="submit" class="primary">Speichern</button>
+        <div class="form-actions">
+          <button type="submit" class="primary">Speichern</button>
+          <button type="button" id="cancel-edit" class="secondary" hidden>Abbrechen</button>
+        </div>
+        <button type="button" id="delete-appointment" class="danger" hidden>Termin löschen</button>
       </form>
     </details>
 
     <p id="empty" class="muted" hidden>Noch keine Termine.</p>
     <ul id="appointment-list" class="list"></ul>
+
+    <details id="archive" class="archive" hidden>
+      <summary id="archive-title"></summary>
+      <ul id="archive-list" class="list"></ul>
+    </details>
   </main>
 </body>
 </html>
