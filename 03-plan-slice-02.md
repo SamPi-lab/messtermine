@@ -105,3 +105,28 @@ Slice 01 sagt dir in der App, welche Mail fällig ist. Damit du nicht jeden Morg
 1. **Mac:** In Safari auf „Zum Kalender“ tippen → Datei öffnen → Kalender zeigt 4 Einträge zu den richtigen Zeiten (ich öffne keine Datei in deinem echten Kalender).
 2. **iPhone:** Verhalten von Download → „Alle hinzufügen“. Geht erst ab Slice 06 (GitHub Pages) oder vorher über den Mac im selben WLAN. Falls iOS die Datei nur in „Dateien“ ablegt statt den Kalender zu öffnen, bauen wir dort einen Ausweg (z. B. Öffnen als Link statt Download).
 3. **Doppelter Export:** Ob Apple Kalender bei gleicher UID ersetzt oder verdoppelt, sehen wir erst bei dir.
+
+---
+
+## Ergebnis Slice 02
+
+**Status: ✅ fertig** (01.10.2026). Alle Kriterien aus A, B und C sind nachweislich erfüllt.
+
+### Nachweise
+- **A:** `node --test` → 23/23 grün (12 neue für `ics.js`, 11 aus Slice 01). Zusätzlich mit `TZ=America/New_York` grün, die Tests hängen also nicht an der Zeitzone des Rechners.
+- **B** (eingebauter Browser, 375 px, jetzt = 01.10.2026, 09:11), Termine über das Formular angelegt, Downloads abgefangen und ausgelesen:
+  - P-01 So 11.10. 10:00 → `P-01.ics`, `text/calendar`, nur CRLF; Messung 11.10. 10:00 (Alarm −1 h), Mail 1/2/3 am 08./10./12.10. um 6:30 (Alarm zur Startzeit)
+  - P-02 Fr 02.10. 09:00 (morgen) → Mail 1 + 2 um **09:20** (vergangen, also 5–10 Min nach jetzt), Mail 3 am 03.10. um 6:30
+  - P-01 Mail 1 abgehakt → neue Datei ohne Mail-1-Erinnerung
+  - Echter Download ohne Abfangen: keine Fehler; Konsole leer; kein horizontales Scrollen; Knopf 44 px hoch; hell und dunkel geprüft
+- **C:** keine `console.log`-Reste, Testdaten im Browser gelöscht, README aktualisiert
+
+### Aufgefallen
+- **Geändert gegenüber Align:** Vergangene Mail-Erinnerungen werden nicht weggelassen, sondern kurz nach dem Export gelegt (deine Entscheidung).
+- **Pop-up, das stehen bleibt:** nicht über die Datei steuerbar. Am iPhone: Einstellungen → Mitteilungen → Kalender → Banner-Stil „Dauerhaft“.
+- Port 8123 war durch die Vorschau eines anderen Chats belegt. Die Vorschau nimmt jetzt einen freien Port; `python3 -m http.server 8123` funktioniert weiter wie gehabt.
+
+### Prüfst du
+1. **Mac:** Safari → „Zum Kalender“ → `P-xx.ics` öffnen → Kalender zeigt 4 Einträge zu den richtigen Zeiten, mit Alarmen.
+2. **iPhone** (Slice 06): Download → „Alle hinzufügen“ und Banner-Stil „Dauerhaft“.
+3. **Doppelter Export:** Ersetzt der Kalender die Einträge oder verdoppelt er sie?
