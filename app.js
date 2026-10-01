@@ -10,6 +10,7 @@ import {
   fillTemplate, mailtoHref, todayStr, isArchived, validateAppointment, applyEdit,
 } from './logic.js';
 import { buildIcs } from './ics.js';
+import { withAppointmentDefaults } from './settings.js';
 import { TEMPLATES } from './templates.js';
 
 const STORAGE_KEY = 'probanden-termine';
@@ -38,7 +39,9 @@ const archiveList = document.getElementById('archive-list');
 function load() {
   try {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (data && data.version === 1 && Array.isArray(data.appointments)) return data;
+    if (data && data.version === 1 && Array.isArray(data.appointments)) {
+      return { ...data, appointments: data.appointments.map(withAppointmentDefaults) };
+    }
   } catch {
     // ungültige oder fehlende Daten: leer starten
   }
@@ -55,9 +58,9 @@ let editingId = null; // ID des Termins im Formular, null = neuer Termin
 // --- Aktionen ---------------------------------------------------------------
 
 function addAppointment({ id, date, time, durationMin }) {
-  state.appointments.push({
+  state.appointments.push(withAppointmentDefaults({
     id, date, time, durationMin, status: 'geplant', sent: { 1: false, 2: false, 3: false },
-  });
+  }));
   save();
   render();
 }

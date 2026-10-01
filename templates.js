@@ -1,5 +1,6 @@
-// Freigegebene Vorlagen (Wortlaut: git show 96fb1ac:02-align.md), Schlüssel = Mail-Nr.
-// Wann welche Mail fällig ist, steht in MAIL_OFFSETS (logic.js).
+// Standardtexte der Vorlagen (Wortlaut: git show 96fb1ac:02-align.md), Schlüssel = Mail-Nr.
+// Betreff und Text lassen sich in den Einstellungen ändern, der Titel nicht.
+// Wann welche Mail fällig ist, steht in DEFAULT_SETTINGS.mailOffsets (settings.js).
 
 export const TEMPLATES = {
   1: {
@@ -9,7 +10,7 @@ export const TEMPLATES = {
 
 vielen Dank, dass Sie an meiner Untersuchung teilnehmen. Hier erhalten Sie die letzten Informationen zu unserem gemeinsamen Termin.
 
-Wir treffen uns am {Datum} um {Uhrzeit} Uhr in der Praxis von home of vitality, Große Bleiche 18–20 in Mainz. Der Eingang befindet sich links neben Netto, die Messung findet im 2. Stock statt. Insgesamt dauert sie ca. 40–60 Minuten.
+Wir treffen uns am {Datum} um {Uhrzeit} Uhr hier: {Ort}. Insgesamt dauert die Messung ca. 40–60 Minuten.
 
 Bitte beachten Sie am Tag vor der Messung und am Tag der Messung Folgendes:
 - Normale Schlafroutine einhalten

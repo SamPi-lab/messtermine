@@ -5,10 +5,12 @@ import {
   isArchived, validateAppointment, applyEdit,
 } from '../logic.js';
 import { TEMPLATES } from '../templates.js';
+import { DEFAULT_SETTINGS } from '../settings.js';
 
+const LOCATION = DEFAULT_SETTINGS.location;
 const appt = (date, sent = {}) => ({
-  id: 'P-07', date, time: '10:00', durationMin: 60, status: 'geplant',
-  sent: { 1: false, 2: false, 3: false, ...sent },
+  id: 'P-07', date, time: '10:00', durationMin: 60, status: 'geplant', location: LOCATION,
+  mailOffsets: { ...DEFAULT_SETTINGS.mailOffsets }, sent: { 1: false, 2: false, 3: false, ...sent },
 });
 const ids = (...list) => list.map((id) => ({ id }));
 
@@ -119,7 +121,7 @@ test('S3-A7 heute oder Zukunft, geplant: nicht archiviert', () => {
   assert.equal(isArchived(appt('2026-10-20'), '2026-10-14'), false);
 });
 
-const input = (changes = {}) => ({ id: 'P-08', date: '2026-10-14', time: '10:00', durationMin: 60, ...changes });
+const input = (changes = {}) => ({ id: 'P-08', date: '2026-10-14', time: '10:00', durationMin: 60, location: LOCATION, ...changes });
 
 test('S3-A8 Prüfung der Eingaben', () => {
   const list = [appt('2026-10-14')];
@@ -137,7 +139,7 @@ test('S3-A9 Bearbeiten mit eigener ID ist kein Doppel', () => {
   assert.equal(validateAppointment(input({ id: 'P-08' }), list, 'P-07'), 'P-08 ist bereits vergeben.');
 });
 
-const edit = (changes) => ({ id: 'P-07', date: '2026-10-14', time: '10:00', durationMin: 60, status: 'geplant', ...changes });
+const edit = (changes) => ({ id: 'P-07', date: '2026-10-14', time: '10:00', durationMin: 60, status: 'geplant', location: LOCATION, ...changes });
 
 test('S3-A10 Datum oder Uhrzeit geändert: Häkchen weg, Kalender prüfen', () => {
   for (const changes of [{ date: '2026-10-16' }, { time: '11:00' }]) {
@@ -163,4 +165,35 @@ test('S3-A12 nur ID geändert: Häkchen bleiben, Kalender prüfen', () => {
   assert.deepEqual(result.appointment.sent, { 1: true, 2: false, 3: false });
   assert.equal(result.checkCalendar, true);
   assert.equal(original.id, 'P-07', 'Original bleibt unverändert');
+});
+
+// --- Slice 04: Mail-Tage pro Termin, Ort, eigene Vorlagen -------------------
+
+test('S4-A5 eigene Mail-Tage am Termin', () => {
+  const a = { ...appt('2026-10-14'), mailOffsets: { 1: -5, 2: 0, 3: 2 } };
+  assert.deepEqual(dueMails(a, '2026-10-09'), [1]);
+  assert.deepEqual(dueMails(a, '2026-10-14'), [1, 2]);
+  assert.deepEqual(dueMails(a, '2026-10-15'), []);
+  assert.deepEqual(dueMails(a, '2026-10-16'), [3]);
+});
+
+test('S4-A7 geänderte Vorlage mit {Ort}', () => {
+  const template = { subject: 'Termin {Datum}', body: '{Uhrzeit} Uhr, {Ort}, nochmal {Ort}' };
+  const { subject, body } = fillTemplate(template, { ...appt('2026-10-14'), location: 'Uni Mainz, Raum 02-123' });
+  assert.equal(subject, 'Termin Mittwoch, 14. Oktober');
+  assert.equal(body, '10:00 Uhr, Uni Mainz, Raum 02-123, nochmal Uni Mainz, Raum 02-123');
+  assert.match(fillTemplate(TEMPLATES[1], appt('2026-10-14')).body,
+    /um 10:00 Uhr hier: home of vitality, Große Bleiche 18–20, Mainz \(Eingang links neben Netto, 2\. Stock\)\./);
+});
+
+test('S4-A8 leerer Ort', () => {
+  assert.equal(validateAppointment(input({ location: '' }), []), 'Bitte einen Ort eingeben.');
+});
+
+test('S4-A9 nur Ort geändert: Häkchen bleiben, Kalender prüfen', () => {
+  const result = applyEdit(appt('2026-10-14', { 1: true }), edit({ location: 'Uni Mainz' }));
+  assert.equal(result.appointment.location, 'Uni Mainz');
+  assert.deepEqual(result.appointment.sent, { 1: true, 2: false, 3: false });
+  assert.deepEqual(result.appointment.mailOffsets, DEFAULT_SETTINGS.mailOffsets);
+  assert.equal(result.checkCalendar, true);
 });

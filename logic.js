@@ -6,9 +6,6 @@ const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Fr
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli',
   'August', 'September', 'Oktober', 'November', 'Dezember'];
 
-// Tage relativ zum Messtermin, ab denen die Mail fällig ist
-export const MAIL_OFFSETS = { 1: -3, 2: -1, 3: 1 };
-
 function parseDate(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d));
@@ -48,8 +45,9 @@ export function sortAppointments(appointments) {
     `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
 }
 
+// Jeder Termin trägt seine Mail-Tage selbst (siehe DEFAULT_SETTINGS in settings.js)
 export function dueDate(appointment, mailNr) {
-  return addDays(appointment.date, MAIL_OFFSETS[mailNr]);
+  return addDays(appointment.date, appointment.mailOffsets[mailNr]);
 }
 
 // Mail 1 und 2 (Vorbereitung, Erinnerung) verfallen nach dem Messtag
@@ -68,18 +66,19 @@ export function isArchived(appointment, today) {
 }
 
 // Prüft die Eingaben aus dem Formular; ownId ist beim Bearbeiten die bisherige ID.
-export function validateAppointment({ id, date, time, durationMin }, appointments, ownId = null) {
+export function validateAppointment({ id, date, time, durationMin, location }, appointments, ownId = null) {
   if (!/^P-\d+$/.test(id)) return 'Bitte eine ID im Format P-01 eingeben.';
   if (id !== ownId && appointments.some((a) => a.id === id)) return `${id} ist bereits vergeben.`;
   if (!date) return 'Bitte ein Datum wählen.';
   if (!time) return 'Bitte eine Uhrzeit wählen.';
   if (!(durationMin >= 5 && durationMin <= 240)) return 'Dauer bitte zwischen 5 und 240 Minuten.';
+  if (!location) return 'Bitte einen Ort eingeben.';
   return null;
 }
 
 // Neuer Stand eines bearbeiteten Termins. Ändern sich Datum oder Uhrzeit, stimmen
-// die Mail-Texte nicht mehr: alle Häkchen werden entfernt. Bei geänderter ID, Datum
-// oder Uhrzeit passen die Kalendereinträge nicht mehr (checkCalendar).
+// die Mail-Texte nicht mehr: alle Häkchen werden entfernt. Bei geänderter ID, Datum,
+// Uhrzeit oder geändertem Ort passen die Kalendereinträge nicht mehr (checkCalendar).
 export function applyEdit(appointment, changes) {
   const moved = changes.date !== appointment.date || changes.time !== appointment.time;
   return {
@@ -88,14 +87,15 @@ export function applyEdit(appointment, changes) {
       ...changes,
       sent: moved ? { 1: false, 2: false, 3: false } : { ...appointment.sent },
     },
-    checkCalendar: moved || changes.id !== appointment.id,
+    checkCalendar: moved || changes.id !== appointment.id || changes.location !== appointment.location,
   };
 }
 
 export function fillTemplate(template, appointment) {
   const fill = (text) => text
     .replaceAll('{Datum}', formatDateDe(appointment.date))
-    .replaceAll('{Uhrzeit}', appointment.time);
+    .replaceAll('{Uhrzeit}', appointment.time)
+    .replaceAll('{Ort}', appointment.location);
   return { subject: fill(template.subject), body: fill(template.body) };
 }
 

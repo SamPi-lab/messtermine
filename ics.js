@@ -3,10 +3,9 @@
 // Alle Zeiten sind Ortszeit Europe/Berlin, die Zeitzone steht in der Datei,
 // damit Termine nach der Umstellung am 25.10.2026 auf derselben Uhrzeit bleiben.
 
-import { addDays, MAIL_OFFSETS, todayStr } from './logic.js';
+import { addDays, dueDate, todayStr } from './logic.js';
+import { DEFAULT_SETTINGS } from './settings.js';
 
-export const LOCATION = 'home of vitality, Große Bleiche 18–20, 55116 Mainz (Eingang links neben Netto, 2. Stock)';
-export const REMINDER_TIME = '06:30';
 const REMINDER_MIN = 15;
 const TZID = 'Europe/Berlin';
 
@@ -60,21 +59,21 @@ function soonAfter(nowLocal) {
   return addMinutes(nowLocal, 10 - (minutesOfDay(nowLocal.time) % 5));
 }
 
-export function calendarEvents(appointment, now) {
+export function calendarEvents(appointment, now, reminderTime = DEFAULT_SETTINGS.reminderTime) {
   const start = { date: appointment.date, time: appointment.time };
   const events = [{
     uid: `${appointment.id}-messung@messtermine`,
     summary: `Messung ${appointment.id}`,
     start,
     end: addMinutes(start, appointment.durationMin),
-    location: LOCATION,
+    location: appointment.location,
     trigger: '-PT1H',
   }];
 
   const nowLocal = localDateTime(now);
   for (const nr of [1, 2, 3]) {
     if (appointment.sent[nr]) continue;
-    let reminder = { date: addDays(appointment.date, MAIL_OFFSETS[nr]), time: REMINDER_TIME };
+    let reminder = { date: dueDate(appointment, nr), time: reminderTime };
     // Ein Alarm in der Vergangenheit meldet sich nie: dann kurz nach jetzt erinnern
     if (isBefore(reminder, nowLocal)) reminder = soonAfter(nowLocal);
     events.push({
@@ -121,9 +120,9 @@ export function foldLine(line) {
 const icsDateTime = ({ date, time }) => `${date.replaceAll('-', '')}T${time.replace(':', '')}00`;
 const icsStamp = (now) => now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
 
-export function buildIcs(appointment, now) {
+export function buildIcs(appointment, now, reminderTime) {
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Messtermine//DE', 'CALSCALE:GREGORIAN', ...VTIMEZONE];
-  for (const event of calendarEvents(appointment, now)) {
+  for (const event of calendarEvents(appointment, now, reminderTime)) {
     lines.push(
       'BEGIN:VEVENT',
       `UID:${event.uid}`,

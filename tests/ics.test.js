@@ -1,10 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calendarEvents, buildIcs, LOCATION } from '../ics.js';
+import { calendarEvents, buildIcs } from '../ics.js';
+import { DEFAULT_SETTINGS } from '../settings.js';
 
+const LOCATION = DEFAULT_SETTINGS.location;
 const appt = (date, time = '10:00', durationMin = 60, sent = {}) => ({
-  id: 'P-07', date, time, durationMin, status: 'geplant',
-  sent: { 1: false, 2: false, 3: false, ...sent },
+  id: 'P-07', date, time, durationMin, status: 'geplant', location: LOCATION,
+  mailOffsets: { ...DEFAULT_SETTINGS.mailOffsets }, sent: { 1: false, 2: false, 3: false, ...sent },
 });
 // Ortszeit: Monat 1-basiert, damit die Tests lesbar bleiben
 const at = (y, mo, d, h = 12, mi = 0) => new Date(y, mo - 1, d, h, mi);
@@ -114,4 +116,17 @@ test('A11 Zeitzone Europe/Berlin', () => {
   assert.match(ics, /TZID:Europe\/Berlin/);
   assert.match(ics, /BEGIN:DAYLIGHT[\s\S]*BYMONTH=3;BYDAY=-1SU[\s\S]*END:DAYLIGHT/);
   assert.match(ics, /BEGIN:STANDARD[\s\S]*BYMONTH=10;BYDAY=-1SU[\s\S]*END:STANDARD/);
+});
+
+test('S4-A6 eigene Uhrzeit und Mail-Tage', () => {
+  const a = { ...appt('2026-10-14'), mailOffsets: { 1: -5, 2: -1, 3: 1 } };
+  const e = bySummary(parseEvents(buildIcs(a, at(2026, 10, 1), '07:00')));
+  assert.equal(start(e['P-07 Mail 1']), '20261009T070000');
+  assert.equal(start(e['P-07 Mail 2']), '20261013T070000');
+  assert.equal(start(e['Messung P-07']), '20261014T100000');
+});
+
+test('S4-A10 eigener Ort in der Messung', () => {
+  const [messung] = calendarEvents({ ...appt('2026-10-14'), location: 'Uni Mainz, Raum 02-123' }, at(2026, 10, 1));
+  assert.equal(messung.location, 'Uni Mainz, Raum 02-123');
 });
