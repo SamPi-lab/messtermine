@@ -116,3 +116,14 @@ Alle Termine, Häkchen und Einstellungen liegen nur im Speicher des Browsers. L�
 ### Nicht Teil meiner Definition of Done (prüfst du)
 1. Speichern und Wiederherstellen auf dem echten iPhone (Teilen-Menü, Ordner „Backup App“)
 2. Ein erstes echtes Backup deiner Daten anlegen
+
+---
+
+## Ergebnis Slice 05
+
+**Stand:** 01.10.2026 · Tests: 54 grün (46 bisher + 8 neue in `tests/backup.test.js`)
+
+- **A1–A10:** alle als automatische Tests umgesetzt und grün.
+- **B1–B9:** im eingebauten Browser (375 px, hell + dunkel) geprüft. Der Teilen-Weg (B8b) lief mit nachgebautem `navigator.share`: Abbrechen lässt den Hinweis stehen und speichert keinen Backup-Zeitpunkt, Erfolg setzt ihn. Der Download-Weg lieferte `messtermine-backup-2026-10-01.json` mit Terminen und Einstellungen. Beim Wiederherstellen kamen Einstellungen, Häkchen und ID-Vorschlag zurück; Abbrechen, kaputte und fremde Dateien änderten nichts; dieselbe Datei ließ sich zweimal wählen. Keine Konsolenfehler, kein horizontales Scrollen, Knöpfe 44 px.
+- **Abweichung vom Plan:** Die Zeitangaben lauten überall „Donnerstag, 1. Oktober, 18:30 Uhr“ (auch in der Rückfrage), statt zusätzlich „01.10.2026, 18:30“. Die Rückfrage heißt „… Der aktuelle Stand mit 2 Terminen und allen Einstellungen wird ersetzt.“, weil das auch bei einem einzelnen Termin grammatisch passt.
+- **Prüfst du:** Teilen-Menü und Ordner „Backup App“ auf dem echten iPhone, dann ein erstes echtes Backup.
