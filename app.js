@@ -28,6 +28,12 @@ const archiveTitle = document.getElementById('archive-title');
 const archiveList = document.getElementById('archive-list');
 
 // --- Zustand: lesen und speichern -----------------------------------------
+// Im localStorage steht { version: 1, appointments: [Termin, …] }. Ein Termin:
+//   id          'P-07'
+//   date, time  '2026-10-14', '09:30' (Ortszeit)
+//   durationMin 60
+//   status      'geplant' | 'durchgeführt' | 'abgesagt'
+//   sent        { 1: false, 2: false, 3: false }  Mail-Nr. → gesendet (Nummern wie in templates.js)
 
 function load() {
   try {

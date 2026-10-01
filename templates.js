@@ -1,4 +1,5 @@
-// Freigegebene Vorlagen aus 02-align.md. In Slice 04 werden sie bearbeitbar.
+// Freigegebene Vorlagen (Wortlaut: git show 96fb1ac:02-align.md), Schlüssel = Mail-Nr.
+// Wann welche Mail fällig ist, steht in MAIL_OFFSETS (logic.js).
 
 export const TEMPLATES = {
   1: {
