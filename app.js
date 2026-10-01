@@ -1,12 +1,14 @@
 // Oberfläche der App. Jede Aktion folgt demselben Muster:
 //   Zustand ändern → save() → render()
 // render() baut die komplette Liste aus dem Zustand neu auf.
-// Die Fachregeln (Fälligkeit, Vorlagen füllen, mailto) stehen in logic.js.
+// Die Fachregeln (Fälligkeit, Vorlagen füllen, mailto) stehen in logic.js,
+// die Kalender-Datei in ics.js.
 
 import {
   suggestNextId, sortAppointments, dueDate, dueMails, formatDateDe,
   fillTemplate, mailtoHref, todayStr,
 } from './logic.js';
+import { buildIcs } from './ics.js';
 import { TEMPLATES } from './templates.js';
 
 const STORAGE_KEY = 'probanden-termine';
@@ -52,6 +54,14 @@ function setSent(id, nr, value) {
   render();
 }
 
+function downloadIcs(appointment) {
+  const blob = new Blob([buildIcs(appointment, new Date())], { type: 'text/calendar' });
+  const url = URL.createObjectURL(blob);
+  const link = el('a', { href: url, download: `${appointment.id}.ics` });
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // --- Anzeige: Liste → Termin → Mail ----------------------------------------
 
 function render() {
@@ -73,7 +83,9 @@ function renderAppointment(appointment, today) {
     `${formatDateDe(appointment.date)} · ${appointment.time} Uhr · ${appointment.durationMin} Min`));
 
   const mails = el('ul', { class: 'mails' }, ...[1, 2, 3].map((nr) => renderMail(appointment, nr, due)));
-  return el('li', { class: 'card', 'data-id': appointment.id }, head, mails);
+  const calendar = el('button', { type: 'button', class: 'secondary calendar' }, '📅 Zum Kalender');
+  calendar.addEventListener('click', () => downloadIcs(appointment));
+  return el('li', { class: 'card', 'data-id': appointment.id }, head, mails, calendar);
 }
 
 function renderMail(appointment, nr, due) {
