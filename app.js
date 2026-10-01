@@ -4,7 +4,8 @@
 // Das Formular oben dient zum Anlegen und, mit editingId, zum Bearbeiten.
 // Die Einstellungen sind eine eigene Ansicht unter #einstellungen über der Liste.
 // Die Fachregeln (Fälligkeit, Vorlagen füllen, mailto) stehen in logic.js,
-// die Kalender-Datei in ics.js, Standardwerte und Prüfung der Einstellungen in settings.js.
+// die Kalender-Datei in ics.js, Standardwerte und Prüfung der Einstellungen in settings.js,
+// Backup-Datei und Hinweis „Backup fällig“ in backup.js.
 
 import {
   suggestNextId, sortAppointments, dueDate, dueMails, formatDateDe,
@@ -15,6 +16,9 @@ import {
   DEFAULT_SETTINGS, withAppointmentDefaults, withDefaults, validateSettings,
 } from './settings.js';
 import { TEMPLATES } from './templates.js';
+import {
+  backupFileName, createBackup, parseBackup, backupAgeDays, needsBackupHint, formatBackupTime,
+} from './backup.js';
 
 const STORAGE_KEY = 'probanden-termine';
 
@@ -36,10 +40,16 @@ const settingsBack = document.getElementById('settings-back');
 const settingsForm = document.getElementById('settings-form');
 const settingsError = document.getElementById('settings-error');
 const templateFields = document.getElementById('template-fields');
+const backupHint = document.getElementById('backup-hint');
+const backupHintText = document.getElementById('backup-hint-text');
+const backupStatus = document.getElementById('backup-status');
+const backupError = document.getElementById('backup-error');
+const backupFile = document.getElementById('backup-file');
 
 // --- Zustand: lesen und speichern -----------------------------------------
-// Im localStorage steht { version: 1, appointments: [Termin, …], settings }.
-// settings: siehe DEFAULT_SETTINGS in settings.js. Ein Termin:
+// Im localStorage steht { version: 1, appointments: [Termin, …], settings, lastBackupAt }.
+// settings: siehe DEFAULT_SETTINGS in settings.js; lastBackupAt: ISO-Zeitpunkt oder null.
+// Eine Backup-Datei enthält denselben Stand (siehe backup.js). Ein Termin:
 //   id          'P-07'
 //   date, time  '2026-10-14', '09:30' (Ortszeit)
 //   durationMin 60
@@ -61,7 +71,7 @@ function load() {
   } catch {
     // ungültige oder fehlende Daten: leer starten
   }
-  return { version: 1, appointments: [], settings: withDefaults() };
+  return { version: 1, appointments: [], settings: withDefaults(), lastBackupAt: null };
 }
 
 function save() {
@@ -105,12 +115,62 @@ function setSent(id, nr, value) {
   render();
 }
 
-function downloadIcs(appointment) {
-  const blob = new Blob([buildIcs(appointment, new Date(), state.settings.reminderTime)], { type: 'text/calendar' });
+function download(blob, fileName) {
   const url = URL.createObjectURL(blob);
-  const link = el('a', { href: url, download: `${appointment.id}.ics` });
-  link.click();
+  el('a', { href: url, download: fileName }).click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadIcs(appointment) {
+  const ics = buildIcs(appointment, new Date(), state.settings.reminderTime);
+  download(new Blob([ics], { type: 'text/calendar' }), `${appointment.id}.ics`);
+}
+
+// iPhone: Teilen-Menü → „In Dateien sichern“; Mac: Download.
+// Erst nach erfolgreichem Teilen zählt das Backup; Abbrechen ändert nichts.
+async function exportBackup() {
+  const now = new Date();
+  const { text, lastBackupAt } = createBackup(state, now);
+  const file = new File([text], backupFileName(now), { type: 'application/json' });
+  let shared = false;
+  if (navigator.maxTouchPoints > 0 && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      shared = true;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      // Teilen nicht möglich: wie auf dem Mac herunterladen
+    }
+  }
+  if (!shared) download(file, file.name);
+  state.lastBackupAt = lastBackupAt;
+  save();
+  render();
+}
+
+async function importBackup(file) {
+  backupError.hidden = true;
+  const { data, error } = parseBackup(await file.text());
+  if (error) {
+    backupError.textContent = error;
+    backupError.hidden = false;
+    return;
+  }
+  const from = data.lastBackupAt ? ` vom ${formatBackupTime(data.lastBackupAt)}` : '';
+  const question = `Backup${from} mit ${countAppointments(data.appointments.length, 'Terminen')} wiederherstellen? `
+    + `Der aktuelle Stand mit ${countAppointments(state.appointments.length, 'Terminen')} und allen Einstellungen wird ersetzt.`;
+  if (!confirm(question)) return;
+  state = data;
+  save();
+  closeForm();
+  render();
+  fillSettingsForm(state.settings);
+  alert(`Backup wiederhergestellt: ${countAppointments(state.appointments.length, 'Termine')}.`);
+}
+
+// countAppointments(1, 'Terminen') → '1 Termin', countAppointments(12, 'Terminen') → '12 Terminen'
+function countAppointments(n, plural) {
+  return n === 1 ? '1 Termin' : `${n} ${plural}`;
 }
 
 // --- Anzeige: Liste → Termin → Mail ----------------------------------------
@@ -126,6 +186,17 @@ function render() {
   archive.hidden = past.length === 0;
   empty.hidden = sorted.length > 0;
   if (!sorted.length) formPanel.open = true;
+  renderBackupState();
+}
+
+function renderBackupState() {
+  const now = new Date();
+  const age = backupAgeDays(state.lastBackupAt, now);
+  backupHint.hidden = !needsBackupHint(state, now);
+  backupHintText.textContent = age === null ? '⚠︎ Noch kein Backup' : `⚠︎ Letztes Backup vor ${age} Tagen`;
+  backupStatus.textContent = state.lastBackupAt
+    ? `Letztes Backup: ${formatBackupTime(state.lastBackupAt)}`
+    : 'Noch kein Backup';
 }
 
 const STATUS_BADGE = { durchgeführt: 'is-done', abgesagt: 'is-cancelled' };
@@ -330,7 +401,7 @@ function readSettingsForm() {
 
 function openSettings() {
   fillSettingsForm(state.settings);
-  settingsError.hidden = true;
+  settingsError.hidden = backupError.hidden = true;
   settingsView.classList.remove('is-leaving');
   settingsView.hidden = false;
   settingsView.scrollTop = 0;
@@ -380,6 +451,17 @@ settingsForm.addEventListener('submit', (event) => {
   render();
   if (!editingId) resetForm(); // neue Standarddauer und neuen Ort ins Formular übernehmen
   leaveSettings();
+});
+
+// --- Backup -----------------------------------------------------------------
+
+document.getElementById('backup-now').addEventListener('click', exportBackup);
+document.getElementById('backup-save').addEventListener('click', exportBackup);
+document.getElementById('backup-restore').addEventListener('click', () => backupFile.click());
+backupFile.addEventListener('change', async () => {
+  const [file] = backupFile.files;
+  backupFile.value = ''; // dieselbe Datei soll erneut wählbar sein
+  if (file) await importBackup(file);
 });
 
 // --- Start ------------------------------------------------------------------

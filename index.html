@@ -13,6 +13,11 @@
   </header>
 
   <main>
+    <div id="backup-hint" class="backup-hint" role="status" hidden>
+      <span id="backup-hint-text"></span>
+      <button type="button" id="backup-now" class="primary">Jetzt sichern</button>
+    </div>
+
     <details id="form-panel" class="card">
       <summary id="form-title">+ Neuer Termin</summary>
       <form id="appointment-form" novalidate>
@@ -63,6 +68,15 @@
   <section id="settings-view" class="settings-view" hidden aria-labelledby="settings-title">
     <button type="button" id="settings-back" class="back">‹ Termine</button>
     <h1 id="settings-title">Einstellungen</h1>
+    <section class="card backup-card">
+      <h2>Backup</h2>
+      <p id="backup-status" class="muted hint"></p>
+      <p class="muted hint">iPhone: „In Dateien sichern“ → iCloud Drive → Claude → Backup App</p>
+      <button type="button" id="backup-save" class="primary">Backup speichern</button>
+      <button type="button" id="backup-restore" class="secondary">Backup wiederherstellen</button>
+      <input type="file" id="backup-file" accept=".json,application/json" hidden>
+      <p id="backup-error" class="error" role="alert" hidden></p>
+    </section>
     <form id="settings-form" novalidate>
       <section class="card">
         <h2>Mails</h2>
