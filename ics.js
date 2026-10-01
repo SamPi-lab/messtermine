@@ -7,6 +7,8 @@ import { addDays, dueDate, todayStr } from './logic.js';
 import { DEFAULT_SETTINGS } from './settings.js';
 
 const REMINDER_MIN = 15;
+// Kein Link: Er würde auf dem iPhone Safari öffnen, nicht die App vom Home-Bildschirm
+const APP_NOTE = 'Messtermine-App öffnen';
 const TZID = 'Europe/Berlin';
 
 const VTIMEZONE = [
@@ -81,6 +83,7 @@ export function calendarEvents(appointment, now, reminderTime = DEFAULT_SETTINGS
       summary: `${appointment.id} Mail ${nr}`,
       start: reminder,
       end: addMinutes(reminder, REMINDER_MIN),
+      description: APP_NOTE,
       trigger: 'PT0S',
     });
   }
@@ -132,6 +135,7 @@ export function buildIcs(appointment, now, reminderTime) {
       `SUMMARY:${escapeText(event.summary)}`,
     );
     if (event.location) lines.push(`LOCATION:${escapeText(event.location)}`);
+    if (event.description) lines.push(`DESCRIPTION:${escapeText(event.description)}`);
     lines.push(
       'BEGIN:VALARM',
       'ACTION:DISPLAY',

@@ -130,3 +130,9 @@ test('S4-A10 eigener Ort in der Messung', () => {
   const [messung] = calendarEvents({ ...appt('2026-10-14'), location: 'Uni Mainz, Raum 02-123' }, at(2026, 10, 1));
   assert.equal(messung.location, 'Uni Mainz, Raum 02-123');
 });
+
+test('S6-A5 Mail-Erinnerungen mit Notiz „Messtermine-App öffnen“, Messung ohne', () => {
+  const events = buildIcs(appt('2026-10-14'), at(2026, 10, 1)).split('BEGIN:VEVENT').slice(1);
+  const notes = events.map((block) => block.split('BEGIN:VALARM')[0].includes('DESCRIPTION:Messtermine-App öffnen'));
+  assert.deepEqual(notes, [false, true, true, true]);
+});
