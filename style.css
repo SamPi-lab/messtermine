@@ -107,6 +107,7 @@ button, .button {
 .appt-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; }
 .appt-id { font-size: 20px; font-weight: 700; }
 .appt-when { width: 100%; font-size: 15px; color: var(--muted); }
+.appt-where { width: 100%; font-size: 14px; color: var(--muted); }
 
 .badge {
   margin-left: auto;

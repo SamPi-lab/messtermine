@@ -3,14 +3,14 @@
 // render() baut beide Listen (aktuell, vergangen & abgesagt) aus dem Zustand neu auf.
 // Das Formular oben dient zum Anlegen und, mit editingId, zum Bearbeiten.
 // Die Fachregeln (Fälligkeit, Vorlagen füllen, mailto) stehen in logic.js,
-// die Kalender-Datei in ics.js.
+// die Kalender-Datei in ics.js, Standardwerte und Prüfung der Einstellungen in settings.js.
 
 import {
   suggestNextId, sortAppointments, dueDate, dueMails, formatDateDe,
   fillTemplate, mailtoHref, todayStr, isArchived, validateAppointment, applyEdit,
 } from './logic.js';
 import { buildIcs } from './ics.js';
-import { withAppointmentDefaults } from './settings.js';
+import { withAppointmentDefaults, withDefaults } from './settings.js';
 import { TEMPLATES } from './templates.js';
 
 const STORAGE_KEY = 'probanden-termine';
@@ -29,23 +29,30 @@ const archiveTitle = document.getElementById('archive-title');
 const archiveList = document.getElementById('archive-list');
 
 // --- Zustand: lesen und speichern -----------------------------------------
-// Im localStorage steht { version: 1, appointments: [Termin, …] }. Ein Termin:
+// Im localStorage steht { version: 1, appointments: [Termin, …], settings }.
+// settings: siehe DEFAULT_SETTINGS in settings.js. Ein Termin:
 //   id          'P-07'
 //   date, time  '2026-10-14', '09:30' (Ortszeit)
 //   durationMin 60
+//   location    'home of vitality, Große Bleiche …'
 //   status      'geplant' | 'durchgeführt' | 'abgesagt'
+//   mailOffsets { 1: -3, 2: -1, 3: 1 }  Tage zum Messtermin, beim Anlegen aus den Einstellungen
 //   sent        { 1: false, 2: false, 3: false }  Mail-Nr. → gesendet (Nummern wie in templates.js)
 
 function load() {
   try {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (data && data.version === 1 && Array.isArray(data.appointments)) {
-      return { ...data, appointments: data.appointments.map(withAppointmentDefaults) };
+      return {
+        ...data,
+        appointments: data.appointments.map(withAppointmentDefaults),
+        settings: withDefaults(data.settings),
+      };
     }
   } catch {
     // ungültige oder fehlende Daten: leer starten
   }
-  return { version: 1, appointments: [] };
+  return { version: 1, appointments: [], settings: withDefaults() };
 }
 
 function save() {
@@ -57,10 +64,11 @@ let editingId = null; // ID des Termins im Formular, null = neuer Termin
 
 // --- Aktionen ---------------------------------------------------------------
 
-function addAppointment({ id, date, time, durationMin }) {
-  state.appointments.push(withAppointmentDefaults({
-    id, date, time, durationMin, status: 'geplant', sent: { 1: false, 2: false, 3: false },
-  }));
+function addAppointment({ id, date, time, durationMin, location }) {
+  state.appointments.push({
+    id, date, time, durationMin, location, status: 'geplant',
+    mailOffsets: { ...state.settings.mailOffsets }, sent: { 1: false, 2: false, 3: false },
+  });
   save();
   render();
 }
@@ -89,7 +97,7 @@ function setSent(id, nr, value) {
 }
 
 function downloadIcs(appointment) {
-  const blob = new Blob([buildIcs(appointment, new Date())], { type: 'text/calendar' });
+  const blob = new Blob([buildIcs(appointment, new Date(), state.settings.reminderTime)], { type: 'text/calendar' });
   const url = URL.createObjectURL(blob);
   const link = el('a', { href: url, download: `${appointment.id}.ics` });
   link.click();
@@ -125,7 +133,8 @@ function renderAppointment(appointment, today) {
     head.append(el('span', { class: 'badge' }, due.length === 1 ? '1 Mail fällig' : `${due.length} Mails fällig`));
   }
   head.append(el('span', { class: 'appt-when' },
-    `${formatDateDe(appointment.date)} · ${appointment.time} Uhr · ${appointment.durationMin} Min`));
+    `${formatDateDe(appointment.date)} · ${appointment.time} Uhr · ${appointment.durationMin} Min`),
+    el('span', { class: 'appt-where' }, appointment.location));
 
   const edit = el('button', { type: 'button', class: 'secondary' }, 'Bearbeiten');
   edit.addEventListener('click', () => startEdit(appointment));
@@ -146,7 +155,7 @@ function renderAppointment(appointment, today) {
 function renderMail(appointment, nr, due) {
   const sent = appointment.sent[nr];
   const isDue = due.includes(nr);
-  const { subject, body } = fillTemplate(TEMPLATES[nr], appointment);
+  const { subject, body } = fillTemplate(state.settings.templates[nr], appointment);
 
   let stateText;
   if (sent) stateText = 'gesendet ✓';
@@ -197,11 +206,13 @@ function setEditMode(id) {
 function resetForm() {
   form.reset();
   form.elements.id.value = suggestNextId(state.appointments);
+  form.elements.durationMin.value = state.settings.durationMin;
+  form.elements.location.value = state.settings.location;
   setEditMode(null);
 }
 
 function startEdit(appointment) {
-  for (const name of ['id', 'date', 'time', 'durationMin', 'status']) {
+  for (const name of ['id', 'date', 'time', 'durationMin', 'location', 'status']) {
     form.elements[name].value = appointment[name];
   }
   setEditMode(appointment.id);
@@ -225,6 +236,7 @@ function readForm() {
     date: form.elements.date.value,
     time: form.elements.time.value,
     durationMin: Number(form.elements.durationMin.value),
+    location: form.elements.location.value.trim(),
     status: form.elements.status.value,
   };
 }
